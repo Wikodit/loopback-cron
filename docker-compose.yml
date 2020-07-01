@@ -1,0 +1,53 @@
+version: "3"
+services:
+  init:
+    restart: "no"
+    build: '.'
+    command: node /home/node/app/dist/migrate.js
+    ports:
+      - "3001:3000"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - NODE_ENV=development
+      - LOOPBACK_CONSOLE=true
+      - NO_SLACK_REPORT=true
+      - SEED_DATA=1
+      - TEST_DATA=1
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+
+  api:
+    restart: always
+    build: '.'
+    depends_on:
+      - postgres
+      - redis
+      - init
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - LOOPBACK_CONSOLE=true
+      - NO_SLACK_REPORT=true
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+
+  postgres:
+    restart: always
+    image: postgres:9.6
+    command: postgres -c config_file=/etc/postgresql.conf
+    environment:
+      - POSTGRES_PASSWORD=test1234
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./local/postgresql.conf:/etc/postgresql.conf
+      - ./local/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+
+  redis:
+    restart: always
+    image: redis:latest
+
+volumes:
+  postgres:
